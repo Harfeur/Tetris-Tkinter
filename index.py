@@ -1,4 +1,4 @@
-from tkinter import Tk, Canvas, PhotoImage
+from tkinter import Tk, Canvas, PhotoImage, ALL
 from itertools import product
 from random import randrange
 from pieces import FORMES
@@ -8,73 +8,65 @@ SIZE = 900
 TAILLE_CARRE = SIZE//20 - 1
 X0 = SIZE//2-5*TAILLE_CARRE
 Y0 = SIZE//2-10*TAILLE_CARRE
+COLORS=["gray20", None, "red", "yellow", "green", "blue", "purple", "orange", "brown"]
 
-GrilleDeJeu = [
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0]
-]
+GrilleDeJeu = []
 
-def afficher(x, y, color):
+def afficher(x, y, pieceNumber, GrilleDeJeu):
     posX0 = X0+x*TAILLE_CARRE
     posY0 = Y0+y*TAILLE_CARRE
-    cnv.create_rectangle(posX0, posY0, posX0+TAILLE_CARRE, posY0+TAILLE_CARRE, fill=color, tag=(str(y)))
+    if GrilleDeJeu[y][x] == 1:
+        color = COLORS[pieceNumber+2]
+    else:
+        color = COLORS[GrilleDeJeu[y][x]]
+    cnv.create_rectangle(posX0, posY0, posX0+TAILLE_CARRE, posY0+TAILLE_CARRE, fill=color)
 
-def init_piece(piece):
-    global GrilleDeJeu
+def update_affichage(GrilleDeJeu, pieceNumber):
+    cnv.delete(ALL)
+    for i,j in product(range(20), range(10)):
+        afficher(j, i, pieceNumber, GrilleDeJeu)
+    cnv.update()
+
+def init_piece(GrilleDeJeu, piece):
     x = 3
+    print("Nouvelle pièce")
     for i in range(len(piece[0])):
         for j in range(len(piece)):
             if piece[i][j] == 1:
-                if GrilleDeJeu[i][j] == 2:
+                if GrilleDeJeu[i][j+x] > 2:
                     return False
-                GrilleDeJeu[i][j] = 1
-                print(GrilleDeJeu)
-                afficher(j, i, 'yellow')
+                GrilleDeJeu[i][j+x] = 1
     return True
 
-def descente():
-    global GrilleDeJeu
+def descente(GrilleDeJeu, pieceNumber):
+    oldGrille = []
+    for i in range(20):
+        L = []
+        for j in range(10):
+            L.append(GrilleDeJeu[i][j])
+        oldGrille.append(L)
     end = False
     for i,j in product(range(20), range(10)):
-        if i == 0 and GrilleDeJeu[19-i][j] == 1:
+        i = 19-i
+        if i == 19 and GrilleDeJeu[i][j] == 1:
             end = True
-        if not end and GrilleDeJeu[19-i][j] == 1:
-            if GrilleDeJeu[20-i][j] == 2:
+        if not end and GrilleDeJeu[i][j] == 1:
+            if GrilleDeJeu[i+1][j] > 1:
                 end = True
-            GrilleDeJeu[20-i][j] = 1
-            GrilleDeJeu[19-i][j] = 0
-            cnv.delete(str(19-i))
-            afficher(j, 19-i, 'yellow')
-        
-        if end == True:
-            if GrilleDeJeu[19-i][j] == 1:
-                GrilleDeJeu[19-i][j] == 2
-    if end:
-        return False
-    return True
+            else:
+                GrilleDeJeu[i+1][j] = 1
+                GrilleDeJeu[i][j] = 0
+            
+        if end:
+            GrilleDeJeu = oldGrille
+            for i,j in product(range(20), range(10)):
+                if GrilleDeJeu[i][j] == 1:
+                    GrilleDeJeu[i][j] = pieceNumber+2
+            return False, GrilleDeJeu
+    return True, GrilleDeJeu
             
 
 def init_game():
-    for i,j in product(range(10), range(20)):
-        afficher(i,j, 'gray20')
     global GrilleDeJeu
     GrilleDeJeu = [
     [0,0,0,0,0,0,0,0,0,0],
@@ -97,30 +89,62 @@ def init_game():
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0]
-]
+    ]
+    update_affichage(GrilleDeJeu, 0)
 
 def game():
+    init_game()
+    global GrilleDeJeu
+    global pieceNumber
     while (True):
-        piece = FORMES[randrange(7)]
-        jeu = init_piece(piece[0])
+        pieceNumber = randrange(7)
+        piece = FORMES[pieceNumber]
+        jeu = init_piece(GrilleDeJeu, piece[0])
         if not jeu:
             return False
-        cnv.update()
-        sleep(1)
+        cnv.after(1000, after)
         etatPiece = True
         while (etatPiece):
-            etatPiece = descente()
-            cnv.update()
-            sleep(1)
-
+            etatPiece, GrilleDeJeu = descente(GrilleDeJeu, pieceNumber)
+            cnv.after(1000, game)
 
 def clic(event):
     if 747 < event.x < 874 and 762 < event.y <834:
         game()
         print("Fini")
- 
-def pos(event):
-    print(event.x, event.y)
+
+def move(sens, GrilleDeJeu):
+    oldGrille = []
+    for i in range(20):
+        L = []
+        for j in range(10):
+            L.append(GrilleDeJeu[i][j])
+        oldGrille.append(L)
+
+    for i,j in product(range(20), range(10)):
+        if GrilleDeJeu[i][j] == 1:
+            if sens == 0:
+                if j == 0:
+                    return oldGrille
+                if GrilleDeJeu[i][j-1] > 0:
+                    return oldGrille
+                GrilleDeJeu[i][j-1] = 1
+                GrilleDeJeu[i][j] = 0
+
+            else:
+                if GrilleDeJeu[i][9] == 1:
+                    return oldGrille
+    return GrilleDeJeu
+
+def touches(event):
+    t = event.keysym
+    global GrilleDeJeu
+    if t == "Left":
+        GrilleDeJeu = move(0, GrilleDeJeu)
+        update_affichage(GrilleDeJeu, pieceNumber)
+    elif t == "Right":
+        GrilleDeJeu = move(1, GrilleDeJeu)
+
 
 root = Tk()
 
@@ -133,6 +157,6 @@ startImg = PhotoImage(file="assets/start.gif")
 cnv.create_image(SIZE-SIZE//10, SIZE-SIZE//10, image=startImg)
 
 root.bind("<Button>", clic)
-#root.bind("<Motion>", pos)
+root.bind("<Key>", touches)
 
 root.mainloop()
