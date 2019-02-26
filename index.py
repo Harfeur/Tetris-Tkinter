@@ -21,6 +21,9 @@ def afficher(x, y, pieceNumber, GrilleDeJeu):
         color = COLORS[GrilleDeJeu[y][x]]
     cnv.create_rectangle(posX0, posY0, posX0+TAILLE_CARRE, posY0+TAILLE_CARRE, fill=color)
 
+def update_():
+    pass
+
 def update_affichage(GrilleDeJeu, pieceNumber):
     cnv.delete(ALL)
     for i,j in product(range(20), range(10)):
@@ -28,7 +31,9 @@ def update_affichage(GrilleDeJeu, pieceNumber):
     cnv.update()
 
 def init_piece(GrilleDeJeu, piece):
+    global x,y
     x = 3
+    y = 0
     print("Nouvelle pièce")
     for i in range(len(piece[0])):
         for j in range(len(piece)):
@@ -36,9 +41,10 @@ def init_piece(GrilleDeJeu, piece):
                 if GrilleDeJeu[i][j+x] > 2:
                     return False
                 GrilleDeJeu[i][j+x] = 1
-    return True
+    return GrilleDeJeu, True
 
 def descente(GrilleDeJeu, pieceNumber):
+    global y
     oldGrille = []
     for i in range(20):
         L = []
@@ -63,6 +69,7 @@ def descente(GrilleDeJeu, pieceNumber):
                 if GrilleDeJeu[i][j] == 1:
                     GrilleDeJeu[i][j] = pieceNumber+2
             return False, GrilleDeJeu
+    y+=1
     return True, GrilleDeJeu
             
 
@@ -94,26 +101,64 @@ def init_game():
 
 def game():
     init_game()
-    global GrilleDeJeu
-    global pieceNumber
-    while (True):
+    global etatPiece
+    etatPiece = False
+    cnv_in_game()
+
+
+def cnv_in_game():
+    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation
+    time = 500
+    if not etatPiece:
+        pieceRotation = 0
         pieceNumber = randrange(7)
         piece = FORMES[pieceNumber]
-        jeu = init_piece(GrilleDeJeu, piece[0])
+        GrilleDeJeu, jeu = init_piece(GrilleDeJeu, piece[0])
         if not jeu:
             return False
-        cnv.after(1000, after)
+        update_affichage(GrilleDeJeu, pieceNumber)
+        cnv.after(time, cnv_in_game)
         etatPiece = True
-        while (etatPiece):
-            etatPiece, GrilleDeJeu = descente(GrilleDeJeu, pieceNumber)
-            cnv.after(1000, game)
+    else:
+        etatPiece, GrilleDeJeu = descente(GrilleDeJeu, pieceNumber)
+        update_affichage(GrilleDeJeu, pieceNumber)
+        cnv.after(time, cnv_in_game)
 
 def clic(event):
     if 747 < event.x < 874 and 762 < event.y <834:
         game()
         print("Fini")
 
+def changement(GrilleDeJeu):
+    global pieceRotation, x, y
+    oldGrille = []
+    for i in range(20):
+        L = []
+        for j in range(10):
+            L.append(GrilleDeJeu[i][j])
+        oldGrille.append(L)
+    
+    for i,j in product(range(20), range(10)):
+        if GrilleDeJeu[i][j] == 1:
+            GrilleDeJeu[i][j] = 0
+    
+    if len(FORMES[pieceNumber])-1 == pieceRotation:
+        nouvelleRotation = 0 
+    else:
+        nouvelleRotation = pieceRotation + 1
+    nouvellePiece = FORMES[pieceNumber][nouvelleRotation]
+    for i,j in product(range(len(nouvellePiece)), range(len(nouvellePiece[0]))):
+        if nouvellePiece[i][j] == 1:
+            if GrilleDeJeu[y+i][x+j] < 2 and x+j>=0:
+                GrilleDeJeu[y+i][x+j] = 1
+            else:
+                return oldGrille
+
+    pieceRotation = nouvelleRotation
+    return GrilleDeJeu
+
 def move(sens, GrilleDeJeu):
+    global x
     oldGrille = []
     for i in range(20):
         L = []
@@ -121,9 +166,9 @@ def move(sens, GrilleDeJeu):
             L.append(GrilleDeJeu[i][j])
         oldGrille.append(L)
 
-    for i,j in product(range(20), range(10)):
-        if GrilleDeJeu[i][j] == 1:
-            if sens == 0:
+    if sens == 0:
+        for i,j in product(range(20), range(10)):
+            if GrilleDeJeu[i][j] == 1:
                 if j == 0:
                     return oldGrille
                 if GrilleDeJeu[i][j-1] > 0:
@@ -131,20 +176,36 @@ def move(sens, GrilleDeJeu):
                 GrilleDeJeu[i][j-1] = 1
                 GrilleDeJeu[i][j] = 0
 
-            else:
-                if GrilleDeJeu[i][9] == 1:
+    else:
+        for i,j in product(range(19, -1, -1), range(9, -1, -1)):
+            if GrilleDeJeu[i][j] == 1:
+                if j == 9:
                     return oldGrille
+                if GrilleDeJeu[i][j+1] > 0:
+                    return oldGrille
+                GrilleDeJeu[i][j+1] = 1
+                GrilleDeJeu[i][j] = 0
+    if sens == 0:
+        x -= 1
+    else:
+        x += 1
     return GrilleDeJeu
 
 def touches(event):
     t = event.keysym
-    global GrilleDeJeu
+    global GrilleDeJeu, etatPiece
     if t == "Left":
         GrilleDeJeu = move(0, GrilleDeJeu)
         update_affichage(GrilleDeJeu, pieceNumber)
     elif t == "Right":
         GrilleDeJeu = move(1, GrilleDeJeu)
-
+        update_affichage(GrilleDeJeu, pieceNumber)
+    elif t == "Up":
+        GrilleDeJeu = changement(GrilleDeJeu)
+        update_affichage(GrilleDeJeu, pieceNumber)
+    elif t == "Down":
+        etatPiece, GrilleDeJeu = descente(GrilleDeJeu, pieceNumber)
+        update_affichage(GrilleDeJeu, pieceNumber)
 
 root = Tk()
 
