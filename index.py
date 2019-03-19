@@ -8,9 +8,14 @@ SIZE = 900
 TAILLE_CARRE = SIZE//20 - 1
 X0 = SIZE//2-5*TAILLE_CARRE
 Y0 = SIZE//2-10*TAILLE_CARRE
-COLORS=["gray20", None, "red", "yellow", "green", "blue", "purple", "orange", "brown"]
+COLORS=["gray20", None, "red", "yellow", "green", "blue", "purple", "orange", "brown", "white"]
 
 GrilleDeJeu = []
+score = 0
+level = 0
+
+high_score = open("high_scores.txt", "r")
+high_score_text = high_score.read()
 
 def afficher(x, y, pieceNumber, GrilleDeJeu):
     posX0 = X0+x*TAILLE_CARRE
@@ -28,18 +33,20 @@ def update_affichage(GrilleDeJeu, pieceNumber):
     cnv.delete(ALL)
     for i,j in product(range(20), range(10)):
         afficher(j, i, pieceNumber, GrilleDeJeu)
+    scoreText = "Score : " + str(score)
+    cnv.create_text(10, 100, text=scoreText, font=('Helvetica', '20'), anchor='nw')
+    cnv.create_text(SIZE//2+6*TAILLE_CARRE, 100, text=high_score_text, font=('Helvetica', '16'), anchor='nw')
     cnv.update()
 
 def init_piece(GrilleDeJeu, piece):
     global x,y
     x = 3
     y = 0
-    print("Nouvelle pièce")
     for i in range(len(piece[0])):
         for j in range(len(piece)):
             if piece[i][j] == 1:
                 if GrilleDeJeu[i][j+x] > 2:
-                    return False
+                    return GrilleDeJeu, False
                 GrilleDeJeu[i][j+x] = 1
     return GrilleDeJeu, True
 
@@ -51,7 +58,9 @@ def descente(GrilleDeJeu, pieceNumber):
         for j in range(10):
             L.append(GrilleDeJeu[i][j])
         oldGrille.append(L)
+
     end = False
+
     for i,j in product(range(20), range(10)):
         i = 19-i
         if i == 19 and GrilleDeJeu[i][j] == 1:
@@ -72,9 +81,8 @@ def descente(GrilleDeJeu, pieceNumber):
     y+=1
     return True, GrilleDeJeu
             
-
 def init_game():
-    global GrilleDeJeu
+    global GrilleDeJeu, score
     GrilleDeJeu = [
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
@@ -98,6 +106,7 @@ def init_game():
     [0,0,0,0,0,0,0,0,0,0]
     ]
     update_affichage(GrilleDeJeu, 0)
+    score = 0
 
 def game():
     init_game()
@@ -105,17 +114,18 @@ def game():
     etatPiece = False
     cnv_in_game()
 
-
 def cnv_in_game():
     global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation
-    time = 500
+    time = 500 - (50 * level//10)
     if not etatPiece:
+        GrilleDeJeu = check_ligne_complete(GrilleDeJeu)
         pieceRotation = 0
         pieceNumber = randrange(7)
         piece = FORMES[pieceNumber]
         GrilleDeJeu, jeu = init_piece(GrilleDeJeu, piece[0])
         if not jeu:
-            return False
+            cnv.create_text(SIZE//2, SIZE//2, text="Game Over !", font=('Helvetica', 50), fill='white')
+            return
         update_affichage(GrilleDeJeu, pieceNumber)
         cnv.after(time, cnv_in_game)
         etatPiece = True
@@ -124,10 +134,40 @@ def cnv_in_game():
         update_affichage(GrilleDeJeu, pieceNumber)
         cnv.after(time, cnv_in_game)
 
+def check_ligne_complete(GrilleDeJeu):
+    global score, level
+    session = 0
+    for i in range(20):
+        state = True
+        for j in range(10):
+            if GrilleDeJeu[i][j] == 0:
+                state = False
+                break
+        if state:
+            session+=1
+            level+=1
+            for j in range(10):
+                GrilleDeJeu[i][j] = 9
+            update_affichage(GrilleDeJeu, pieceNumber)
+            for j in range(10):
+                GrilleDeJeu[i][j] = 0
+            for ii in range(i-1, -1, -1):
+                for j in range(10):
+                    GrilleDeJeu[ii+1][j] = GrilleDeJeu[ii][j]
+            update_affichage(GrilleDeJeu, pieceNumber)
+    if session == 1:
+        score += 40 * (level//10 + 1)
+    elif session == 2:
+        score += 100 * (level//10 + 1)
+    elif session == 3:
+        score += 300 * (level//10 + 1)
+    elif session == 4:
+        score += 1200 * (level//10 + 1)
+    return GrilleDeJeu
+
 def clic(event):
     if 747 < event.x < 874 and 762 < event.y <834:
         game()
-        print("Fini")
 
 def changement(GrilleDeJeu):
     global pieceRotation, x, y
@@ -146,10 +186,12 @@ def changement(GrilleDeJeu):
         nouvelleRotation = 0 
     else:
         nouvelleRotation = pieceRotation + 1
+
     nouvellePiece = FORMES[pieceNumber][nouvelleRotation]
+
     for i,j in product(range(len(nouvellePiece)), range(len(nouvellePiece[0]))):
         if nouvellePiece[i][j] == 1:
-            if GrilleDeJeu[y+i][x+j] < 2 and x+j>=0:
+            if x+j>=0 and x+j<10 and GrilleDeJeu[y+i][x+j] < 2:
                 GrilleDeJeu[y+i][x+j] = 1
             else:
                 return oldGrille
