@@ -4,7 +4,7 @@ from random import randrange
 from pieces import FORMES
 from time import sleep
 
-SIZE = 900
+SIZE = 700
 TAILLE_CARRE = SIZE//20 - 1
 X0 = SIZE//2-5*TAILLE_CARRE
 Y0 = SIZE//2-10*TAILLE_CARRE
@@ -166,7 +166,7 @@ def check_ligne_complete(GrilleDeJeu):
     return GrilleDeJeu
 
 def clic(event):
-    if 747 < event.x < 874 and 762 < event.y <834:
+    if SIZE-SIZE//10 < event.x < SIZE and SIZE-SIZE//10 < event.y <SIZE:
         game()
 
 def changement(GrilleDeJeu):
