@@ -8,11 +8,13 @@ SIZE = 700
 TAILLE_CARRE = SIZE//20 - 1
 X0 = SIZE//2-5*TAILLE_CARRE
 Y0 = SIZE//2-10*TAILLE_CARRE
-COLORS=["gray20", None, "red", "yellow", "green", "blue", "purple", "orange", "brown", "white"]
+COLORS=["gray60", None, "red", "yellow", "green", "blue", "purple", "orange", "brown", "white","gray20"]
 
 GrilleDeJeu = []
 score = 0
 level = 0
+x = 0
+y = 0
 
 high_score = open("high_scores.txt", "r")
 high_score_text = high_score.read()
@@ -66,7 +68,7 @@ def descente(GrilleDeJeu, pieceNumber):
         if i == 19 and GrilleDeJeu[i][j] == 1:
             end = True
         if not end and GrilleDeJeu[i][j] == 1:
-            if GrilleDeJeu[i+1][j] > 1:
+            if 10 > GrilleDeJeu[i+1][j] > 1:
                 end = True
             else:
                 GrilleDeJeu[i+1][j] = 1
@@ -80,7 +82,43 @@ def descente(GrilleDeJeu, pieceNumber):
             return False, GrilleDeJeu
     y+=1
     return True, GrilleDeJeu
-            
+
+def ombre(GrilleDeJeu, pieceNumber):
+    global y
+    oldY = y
+    etat= False
+    Ombre = []
+    Ngdj = []
+    for i in range(20):
+        L = []
+        for j in range(10):
+            if GrilleDeJeu[i][j]==1:
+                etat = True
+            if GrilleDeJeu[i][j]==10:
+                L.append(0)
+                GrilleDeJeu[i][j] = 0
+            else:
+                L.append(GrilleDeJeu[i][j])
+        Ngdj.append(L)
+        Ombre.append(L)
+    if not etat:
+        return GrilleDeJeu
+    while etat:
+        etat,Ngdj=descente(Ngdj, pieceNumber)
+        if etat:
+            Ombre = []
+            for i in range(20):
+                L = []
+                for j in range(10):
+                    L.append(Ngdj[i][j])
+                Ombre.append(L)
+
+    for i,j in product(range(20), range(10)):
+        if Ombre[i][j] == 1 and GrilleDeJeu[i][j] != 1:
+            GrilleDeJeu[i][j]=10
+    y = oldY
+    return GrilleDeJeu
+
 def init_game():
     global GrilleDeJeu, score
     GrilleDeJeu = [
@@ -126,11 +164,14 @@ def cnv_in_game():
         if not jeu:
             cnv.create_text(SIZE//2, SIZE//2, text="Game Over !", font=('Helvetica', 50), fill='white')
             return
+            
+        GrilleDeJeu = ombre(GrilleDeJeu, pieceNumber)
         update_affichage(GrilleDeJeu, pieceNumber)
         cnv.after(time, cnv_in_game)
         etatPiece = True
     else:
         etatPiece, GrilleDeJeu = descente(GrilleDeJeu, pieceNumber)
+        GrilleDeJeu = ombre(GrilleDeJeu, pieceNumber)
         update_affichage(GrilleDeJeu, pieceNumber)
         cnv.after(time, cnv_in_game)
 
@@ -197,7 +238,7 @@ def changement(GrilleDeJeu):
                 return oldGrille
 
     pieceRotation = nouvelleRotation
-    return GrilleDeJeu
+    return ombre(GrilleDeJeu, pieceNumber)
 
 def move(sens, GrilleDeJeu):
     global x
@@ -231,6 +272,7 @@ def move(sens, GrilleDeJeu):
         x -= 1
     else:
         x += 1
+    GrilleDeJeu = ombre(GrilleDeJeu, pieceNumber)
     return GrilleDeJeu
 
 def touches(event):
@@ -244,10 +286,12 @@ def touches(event):
         update_affichage(GrilleDeJeu, pieceNumber)
     elif t == "Up":
         GrilleDeJeu = changement(GrilleDeJeu)
+        
         update_affichage(GrilleDeJeu, pieceNumber)
     elif t == "Down":
         etatPiece, GrilleDeJeu = descente(GrilleDeJeu, pieceNumber)
         update_affichage(GrilleDeJeu, pieceNumber)
+
 
 root = Tk()
 
