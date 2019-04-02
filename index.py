@@ -2,7 +2,6 @@ from tkinter import Tk, Canvas, PhotoImage, ALL
 from itertools import product
 from random import randrange
 from pieces import FORMES
-from time import sleep
 
 SIZE = 700
 TAILLE_CARRE = SIZE//20 - 1
@@ -13,29 +12,31 @@ COLORS=["gray20", None, "red", "yellow", "green", "blue", "purple", "orange", "b
 GrilleDeJeu = []
 score = 0
 level = 0
+futurePieceNumber = randrange(7)
+IDs = []
 
 high_score = open("high_scores.txt", "r")
 high_score_text = high_score.read()
 
 def afficher(x, y, pieceNumber, GrilleDeJeu):
+    global IDs
     posX0 = X0+x*TAILLE_CARRE
     posY0 = Y0+y*TAILLE_CARRE
     if GrilleDeJeu[y][x] == 1:
         color = COLORS[pieceNumber+2]
     else:
         color = COLORS[GrilleDeJeu[y][x]]
-    cnv.create_rectangle(posX0, posY0, posX0+TAILLE_CARRE, posY0+TAILLE_CARRE, fill=color)
-
-def update_():
-    pass
+    IDs.append(cnv.create_rectangle(posX0, posY0, posX0+TAILLE_CARRE, posY0+TAILLE_CARRE, fill=color))
 
 def update_affichage(GrilleDeJeu, pieceNumber):
-    cnv.delete(ALL)
+    global IDs, textScore
+    for x in IDs:
+        cnv.delete(x)
+    IDs = []
     for i,j in product(range(20), range(10)):
         afficher(j, i, pieceNumber, GrilleDeJeu)
     scoreText = "Score : " + str(score)
-    cnv.create_text(10, 100, text=scoreText, font=('Helvetica', '20'), anchor='nw')
-    cnv.create_text(SIZE//2+6*TAILLE_CARRE, 100, text=high_score_text, font=('Helvetica', '16'), anchor='nw')
+    cnv.itemconfig(textScore, text=scoreText)
     cnv.update()
 
 def init_piece(GrilleDeJeu, piece):
@@ -115,12 +116,13 @@ def game():
     cnv_in_game()
 
 def cnv_in_game():
-    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation
+    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation, futurePieceNumber
     time = 500 - (50 * level//10)
     if not etatPiece:
         GrilleDeJeu = check_ligne_complete(GrilleDeJeu)
         pieceRotation = 0
-        pieceNumber = randrange(7)
+        pieceNumber = futurePieceNumber
+        futurePieceNumber = randrange(7)
         piece = FORMES[pieceNumber]
         GrilleDeJeu, jeu = init_piece(GrilleDeJeu, piece[0])
         if not jeu:
@@ -254,10 +256,12 @@ root = Tk()
 cnv = Canvas(root, width=SIZE, height=SIZE, background="white")
 cnv.pack()
 
-init_game()
-
 startImg = PhotoImage(file="assets/start.gif")
 cnv.create_image(SIZE-SIZE//10, SIZE-SIZE//10, image=startImg)
+cnv.create_text(SIZE//2+6*TAILLE_CARRE, 100, text=high_score_text, font=('Helvetica', '16'), anchor='nw')
+textScore = cnv.create_text(10, 100, text="", font=('Helvetica', '20'), anchor='nw')
+
+init_game()
 
 root.bind("<Button>", clic)
 root.bind("<Key>", touches)
