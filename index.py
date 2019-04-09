@@ -20,8 +20,6 @@ game_started = False
 after_id = None
 time = 0
 
-high_score = open("high_scores.txt", "r")
-high_score_text = high_score.read()
 
 def afficher(x, y, pieceNumber, GrilleDeJeu):
     global IDs
@@ -170,7 +168,8 @@ def cnv_in_game():
         GrilleDeJeu, jeu = init_piece(GrilleDeJeu, piece[0])
         if not jeu:
             cnv.create_text(SIZE//2, SIZE//2, text="Game Over", font=('Helvetica', 50), fill='white')
-            cnv.create_text(SIZE//2, SIZE//2,text=score, font=('Helvetica', 20), fill='black')
+            cnv.create_text(SIZE//2, 100,text="Your score is: "+str(score), font=('Helvetica', 20), fill='black')
+            update_score(score)
             return
             
         GrilleDeJeu = ombre(GrilleDeJeu, pieceNumber)
@@ -185,6 +184,34 @@ def cnv_in_game():
             cnv_in_game()
         else:
             after_id = cnv.after(time, cnv_in_game)
+
+def update_score(score):
+    global high_score_label
+    hs = open("high_scores.txt")
+    line= hs.read()
+    scores = line.split("\n")
+    for i in range(len(scores)):
+        scores[i] = int(scores[i])
+
+    scores.append(score)
+    scores.sort(reverse=True)
+    scores.pop()
+
+    hs.close()
+    hs = open("high_scores.txt", "w")
+
+    for i in range(len(scores)):
+        if i ==len(scores)-1:
+            scores[i] = str(scores[i])
+        else:
+            scores[i] = str(scores[i])+"\n"
+
+    hs.writelines(scores)
+    hs.close()
+    hs = open("high_scores.txt")
+    line= hs.read()
+    cnv.delete(high_score_label)
+    cnv.create_text(SIZE//2+6*TAILLE_CARRE, 100, text=line, font=('Helvetica', '16'), anchor='nw')
 
 def cancel():
     global after_id
@@ -324,8 +351,13 @@ cnv.pack()
 
 startImg = PhotoImage(file="assets/start.gif")
 imageDepart = cnv.create_image(SIZE//2, SIZE//2, image=startImg)
-cnv.create_text(SIZE//2+6*TAILLE_CARRE, 100, text=high_score_text, font=('Helvetica', '16'), anchor='nw')
 textScore = cnv.create_text(10, 100, text="", font=('Helvetica', '20'), anchor='nw')
+
+
+high_score = open("high_scores.txt", "r")
+high_score_text = high_score.read()
+high_score.close()
+high_score_label = cnv.create_text(SIZE//2+6*TAILLE_CARRE, 100, text=high_score_text, font=('Helvetica', '16'), anchor='nw')
 
 root.bind("<Button>", clic)
 root.bind("<Key>", touches)
