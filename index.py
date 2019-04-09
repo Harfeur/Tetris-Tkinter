@@ -169,7 +169,7 @@ def cnv_in_game():
         piece = FORMES[pieceNumber]
         GrilleDeJeu, jeu = init_piece(GrilleDeJeu, piece[0])
         if not jeu:
-            cnv.create_text(SIZE//2, SIZE//2, text="Game Over !", font=('Helvetica', 50), fill='white')
+            cnv.create_text(SIZE//2, SIZE//2, text="Game Over", font=('Helvetica', 50), fill='white')
             cnv.create_text(SIZE//2, SIZE//2,text=score, font=('Helvetica', 20), fill='black')
             return
             
