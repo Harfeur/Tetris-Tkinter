@@ -34,7 +34,7 @@ def afficher(x, y, pieceNumber, GrilleDeJeu):
     IDs.append(cnv.create_rectangle(posX0, posY0, posX0+TAILLE_CARRE, posY0+TAILLE_CARRE, fill=color))
 
 def update_affichage(GrilleDeJeu, pieceNumber):
-    global IDs, textScore
+    global IDs, textScore, futurePieceNumber
     for x in IDs:
         cnv.delete(x)
     IDs = []
@@ -42,7 +42,12 @@ def update_affichage(GrilleDeJeu, pieceNumber):
         afficher(j, i, pieceNumber, GrilleDeJeu)
     scoreText = "Score : " + str(score)
     cnv.itemconfig(textScore, text=scoreText)
+    for i,j in product(range(len(FORMES[futurePieceNumber][0])), range(len(FORMES[futurePieceNumber][0][0]))):
+        if FORMES[futurePieceNumber][0][i][j] == 1:
+            IDs.append(cnv.create_rectangle(10+TAILLE_CARRE*j, 400+TAILLE_CARRE*i, 10+TAILLE_CARRE*(j+1), 400+TAILLE_CARRE*(i+1), fill=COLORS[futurePieceNumber+2]))
     cnv.update()
+
+
 
 def init_piece(GrilleDeJeu, piece):
     global x,y
@@ -266,7 +271,10 @@ def move(sens, GrilleDeJeu):
     for i in range(20):
         L = []
         for j in range(10):
-            L.append(GrilleDeJeu[i][j])
+            if GrilleDeJeu[i][j] == 10:
+                L.append(0)
+            else:
+                L.append(GrilleDeJeu[i][j])
         oldGrille.append(L)
 
     if sens == 0:
