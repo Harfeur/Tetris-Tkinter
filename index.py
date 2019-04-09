@@ -159,7 +159,7 @@ def game():
     cnv_in_game()
 
 def cnv_in_game():
-    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation, futurePieceNumber, after_id, time
+    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation, futurePieceNumber, after_id, time, score
     time = 500 - (50 * level//10)
     if not etatPiece:
         GrilleDeJeu = check_ligne_complete(GrilleDeJeu)
@@ -170,6 +170,7 @@ def cnv_in_game():
         GrilleDeJeu, jeu = init_piece(GrilleDeJeu, piece[0])
         if not jeu:
             cnv.create_text(SIZE//2, SIZE//2, text="Game Over !", font=('Helvetica', 50), fill='white')
+            cnv.create_text(SIZE//2, SIZE//2,text=score, font=('Helvetica', 20), fill='black')
             return
             
         GrilleDeJeu = ombre(GrilleDeJeu, pieceNumber)
