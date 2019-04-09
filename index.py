@@ -16,6 +16,9 @@ futurePieceNumber = randrange(7)
 IDs = []
 x = 0
 y = 0
+game_started = False
+after_id = None
+time = 0
 
 high_score = open("high_scores.txt", "r")
 high_score_text = high_score.read()
@@ -149,12 +152,14 @@ def init_game():
 
 def game():
     init_game()
-    global etatPiece
+    global etatPiece, imageDepart, game_started
+    cnv.delete(imageDepart)
     etatPiece = False
+    game_started = True
     cnv_in_game()
 
 def cnv_in_game():
-    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation, futurePieceNumber
+    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation, futurePieceNumber, after_id, time
     time = 500 - (50 * level//10)
     if not etatPiece:
         GrilleDeJeu = check_ligne_complete(GrilleDeJeu)
@@ -169,13 +174,22 @@ def cnv_in_game():
             
         GrilleDeJeu = ombre(GrilleDeJeu, pieceNumber)
         update_affichage(GrilleDeJeu, pieceNumber)
-        cnv.after(time, cnv_in_game)
+        after_id = cnv.after(time, cnv_in_game)
         etatPiece = True
     else:
         etatPiece, GrilleDeJeu = descente(GrilleDeJeu, pieceNumber)
         GrilleDeJeu = ombre(GrilleDeJeu, pieceNumber)
         update_affichage(GrilleDeJeu, pieceNumber)
-        cnv.after(time, cnv_in_game)
+        if not etatPiece:
+            cnv_in_game()
+        else:
+            after_id = cnv.after(time, cnv_in_game)
+
+def cancel():
+    global after_id
+    if after_id is not None:
+        cnv.after_cancel(after_id)
+        after_id = None
 
 def check_ligne_complete(GrilleDeJeu):
     global score, level
@@ -209,7 +223,8 @@ def check_ligne_complete(GrilleDeJeu):
     return GrilleDeJeu
 
 def clic(event):
-    if SIZE-SIZE//10 < event.x < SIZE and SIZE-SIZE//10 < event.y <SIZE:
+    global game_started
+    if not game_started:
         game()
 
 def changement(GrilleDeJeu):
@@ -243,7 +258,9 @@ def changement(GrilleDeJeu):
     return ombre(GrilleDeJeu, pieceNumber)
 
 def move(sens, GrilleDeJeu):
-    global x
+    global x, game_started
+    if not game_started:
+        return
     oldGrille = []
     for i in range(20):
         L = []
@@ -279,7 +296,7 @@ def move(sens, GrilleDeJeu):
 
 def touches(event):
     t = event.keysym
-    global GrilleDeJeu, etatPiece
+    global GrilleDeJeu, etatPiece, after_id, time
     if t == "Left":
         GrilleDeJeu = move(0, GrilleDeJeu)
         update_affichage(GrilleDeJeu, pieceNumber)
@@ -291,7 +308,11 @@ def touches(event):
         
         update_affichage(GrilleDeJeu, pieceNumber)
     elif t == "Down":
+        if not etatPiece:
+            return
+        #cancel()
         etatPiece, GrilleDeJeu = descente(GrilleDeJeu, pieceNumber)
+        #after_id = cnv.after(time, cnv_in_game)
         update_affichage(GrilleDeJeu, pieceNumber)
 
 
@@ -301,11 +322,9 @@ cnv = Canvas(root, width=SIZE, height=SIZE, background="white")
 cnv.pack()
 
 startImg = PhotoImage(file="assets/start.gif")
-cnv.create_image(SIZE-SIZE//10, SIZE-SIZE//10, image=startImg)
+imageDepart = cnv.create_image(SIZE//2, SIZE//2, image=startImg)
 cnv.create_text(SIZE//2+6*TAILLE_CARRE, 100, text=high_score_text, font=('Helvetica', '16'), anchor='nw')
 textScore = cnv.create_text(10, 100, text="", font=('Helvetica', '20'), anchor='nw')
-
-init_game()
 
 root.bind("<Button>", clic)
 root.bind("<Key>", touches)
