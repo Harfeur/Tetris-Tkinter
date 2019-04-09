@@ -154,7 +154,7 @@ def game():
     cnv_in_game()
 
 def cnv_in_game():
-    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation, futurePieceNumber
+    global GrilleDeJeu, pieceNumber, etatPiece, pieceRotation, score, futurePieceNumber
     time = 500 - (50 * level//10)
     if not etatPiece:
         GrilleDeJeu = check_ligne_complete(GrilleDeJeu)
@@ -165,6 +165,7 @@ def cnv_in_game():
         GrilleDeJeu, jeu = init_piece(GrilleDeJeu, piece[0])
         if not jeu:
             cnv.create_text(SIZE//2, SIZE//2, text="Game Over !", font=('Helvetica', 50), fill='white')
+            cnv.create_text(SIZE//2, SIZE//2,text=score, font=('Helvetica', 20), fill='black')
             return
             
         GrilleDeJeu = ombre(GrilleDeJeu, pieceNumber)
@@ -302,10 +303,6 @@ cnv.pack()
 
 startImg = PhotoImage(file="assets/start.gif")
 cnv.create_image(SIZE-SIZE//10, SIZE-SIZE//10, image=startImg)
-cnv.create_text(SIZE//2+6*TAILLE_CARRE, 100, text=high_score_text, font=('Helvetica', '16'), anchor='nw')
-textScore = cnv.create_text(10, 100, text="", font=('Helvetica', '20'), anchor='nw')
-
-init_game()
 
 root.bind("<Button>", clic)
 root.bind("<Key>", touches)
